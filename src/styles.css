@@ -243,6 +243,28 @@ select:focus {
   font-weight: 600;
   font-size: 0.9rem;
 }
+.auth-tabs {
+  display: flex;
+  width: 100%;
+  margin-bottom: 16px;
+}
+.auth-tabs .tab {
+  flex: 1;
+}
+.auth-foot {
+  margin: 14px 0 0;
+  text-align: center;
+}
+.linklike {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--pl-purple);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
 
 /* ---- Dashboard ---- */
 .two-col {

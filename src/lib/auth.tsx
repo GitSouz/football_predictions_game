@@ -15,19 +15,23 @@ interface AuthState {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
-  /** Send a magic-link / OTP email. */
-  signIn: (email: string) => Promise<void>;
+  signIn: (username: string, password: string) => Promise<void>;
+  signUp: (username: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   setDisplayName: (name: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
 
-// Fallback display name derived from an email's local part, e.g. "sam.jones".
-function nameFromEmail(email: string | undefined): string {
-  if (!email) return 'Player';
-  const local = email.split('@')[0] ?? 'Player';
-  return local.replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+// Supabase Auth is email-based, but we never send email. Each username is
+// mapped to a stable synthetic address so Supabase can key the account on it.
+// The domain doesn't have to exist — no mail is ever delivered to it.
+const EMAIL_DOMAIN = 'players.predictions.local';
+
+/** Normalise a username to its synthetic login email (case-insensitive). */
+export function usernameToEmail(username: string): string {
+  const slug = username.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, '');
+  return `${slug}@${EMAIL_DOMAIN}`;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -40,19 +44,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
-
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);
     });
-
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
     });
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // Ensure a profile row exists after sign-in, seeding a default display name.
+  // Load the profile (display name) for the signed-in user.
   useEffect(() => {
     const user = session?.user;
     if (!user) {
@@ -62,14 +64,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     (async () => {
       try {
-        let p = await getProfile(user.id);
-        if (!p) {
-          await upsertProfile(user.id, nameFromEmail(user.email));
-          p = await getProfile(user.id);
-        }
+        const p = await getProfile(user.id);
         if (!cancelled) setProfile(p);
       } catch {
-        /* ignore — profile will be retried on next auth change */
+        /* ignore — retried on next auth change */
       }
     })();
     return () => {
@@ -82,18 +80,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: session?.user ?? null,
     session,
     profile,
-    async signIn(email: string) {
+
+    async signUp(username: string, password: string) {
       if (!supabase) throw new Error('Supabase is not configured.');
-      const { error } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: { emailRedirectTo: window.location.origin },
+      const email = usernameToEmail(username);
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) throw new Error(error.message);
+
+      // With email confirmation OFF, sign-up returns a session immediately.
+      const u = data.user ?? data.session?.user;
+      if (u && data.session) {
+        await upsertProfile(u.id, username.trim());
+        try {
+          setProfile(await getProfile(u.id));
+        } catch {
+          /* profile will load on the auth-change effect */
+        }
+        return;
+      }
+
+      // No session came back. Either the username is taken, or email
+      // confirmation is still switched ON in Supabase. Try to sign in — if the
+      // password matches an existing account this logs them in; otherwise we
+      // surface a clear message.
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (signInErr) {
+        throw new Error(
+          'That username may already be taken. If it’s yours, use “Sign in”. ' +
+            'If you just created it and nothing happened, make sure “Confirm ' +
+            'email” is turned OFF in your Supabase Auth settings.'
+        );
+      }
+    },
+
+    async signIn(username: string, password: string) {
+      if (!supabase) throw new Error('Supabase is not configured.');
+      const email = usernameToEmail(username);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
       if (error) throw new Error(error.message);
     },
+
     async signOut() {
       if (!supabase) return;
       await supabase.auth.signOut();
     },
+
     async setDisplayName(name: string) {
       const user = session?.user;
       if (!user) return;

@@ -2,7 +2,7 @@
 
 Two free services, ~20–30 minutes the first time. Total cost: **$0**.
 
-1. **Supabase** — the database, accounts (magic-link login), and security rules.
+1. **Supabase** — the database, accounts (username + password), and security rules.
 2. **Vercel** — hosts the site and runs the job that pulls in live scores.
 
 ---
@@ -21,25 +21,20 @@ this repo, paste the **whole file** in, and click **Run**. You should see
 "Success". This creates every table, the security rules, the scoring view, and
 the game functions.
 
-### 1.3 Turn on email login
-Open **Authentication → Sign In / Providers** and make sure **Email** is
-enabled. For the smoothest experience:
+### 1.3 Turn on username login (no email sending)
+Players sign in with a **username + password** — no emails are ever sent, so you
+don't need to configure any mail provider. Set this up:
 
-- Under **Email**, keep **"Confirm email"** on. Supabase sends a magic link /
-  one-time code — no passwords for your friends to forget.
-- (Optional) You can enable **"Enable email OTP"** so people can paste a 6-digit
-  code instead of clicking the link.
+1. **Authentication → Sign In / Providers** → make sure **Email** is enabled
+   (it's the underlying mechanism; usernames are mapped to a hidden synthetic
+   address).
+2. In the **Email** provider settings, turn **"Confirm email" OFF**. This is the
+   key step — it lets a new username sign up and get straight in without any
+   confirmation email. If you leave it on, sign-up will hang trying to send mail.
 
-> Supabase's built-in email works out of the box for a small group. If you ever
-> hit its low free sending limit, add any SMTP provider under
-> **Authentication → Emails → SMTP Settings**.
+That's it — no SMTP, no magic links, no rate limits.
 
-### 1.4 Set the redirect URL (after you have a Vercel URL — Part 2)
-Come back here once deployed: **Authentication → URL Configuration** →
-add your Vercel URL (e.g. `https://your-app.vercel.app`) to **Site URL** and
-**Redirect URLs**. This makes the login link return people to your live site.
-
-### 1.5 Copy your keys
+### 1.4 Copy your keys
 Open **Project Settings → API** and copy:
 
 | Value | Where it's used |
@@ -72,8 +67,7 @@ triggering the sync endpoint. Vercel Cron sends it automatically.
 
 ### 2.3 Deploy
 Click **Deploy**. In ~1 minute you get a URL like
-`https://your-app.vercel.app`. Then go back and do **step 1.4** (redirect URL)
-in Supabase.
+`https://your-app.vercel.app` — that's the link you share with your friends.
 
 ### 2.4 Load the fixtures
 Open your site, sign in, create a league, and open it. Hit **↻ Refresh scores**
@@ -109,8 +103,12 @@ once to pull the season's fixtures in immediately.
 - **"Connect Supabase" screen** → the `VITE_` env vars aren't set (or the app
   wasn't redeployed after adding them). Check Vercel → Settings → Environment
   Variables, then redeploy.
-- **Login link goes to the wrong place / "invalid" error** → set your Vercel URL
-  in Supabase **Authentication → URL Configuration** (step 1.4).
+- **Sign-up does nothing / "Error sending confirmation email"** → turn
+  **"Confirm email" OFF** in Supabase **Authentication → Sign In / Providers →
+  Email** (step 1.3). With it on, Supabase tries to send a confirmation email
+  and fails.
+- **A friend forgot their password** → as the host, reset it in Supabase
+  **Authentication → Users**: find their username row and set a new password.
 - **No fixtures / scores** → click **↻ Refresh scores**. If it still fails, the
   FPL API may be mid-update (it goes offline briefly between seasons and during
   daily maintenance) — try again shortly. Also confirm `SUPABASE_SERVICE_ROLE_KEY`

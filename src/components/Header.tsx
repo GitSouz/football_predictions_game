@@ -48,7 +48,7 @@ export function Header() {
                 setEditing(true);
               }}
             >
-              {profile?.display_name ?? user.email}
+              {profile?.display_name ?? 'Player'}
             </button>
           )}
           <button className="btn-ghost" onClick={signOut}>

@@ -11,8 +11,8 @@ no spreadsheets, no manual scoring.
 ## How it plays
 
 1. One person **creates a league** and shares the 6-character code.
-2. Everyone **signs in with their email** (a one-click magic link — no
-   passwords) and **joins** with the code.
+2. Everyone **picks a username + password** (no email needed) and **joins**
+   with the code.
 3. Each gameweek, everyone **predicts every fixture**. You can edit right up to
    the **gameweek deadline** (the first kickoff), then predictions **lock**.
 4. As matches are played, results are pulled in automatically and the
@@ -22,7 +22,7 @@ no spreadsheets, no manual scoring.
 ## The stack (same shape as `fpl_draft`)
 
 - **Vite + React + TypeScript** single-page app
-- **Supabase** — Postgres + Auth (email magic link) + Row-Level Security +
+- **Supabase** — Postgres + Auth (username + password, no email) + Row-Level Security +
   Realtime. All the game logic and the fairness rules (predictions stay hidden
   until lock; no editing after the deadline) are enforced in the database, not
   just the UI.

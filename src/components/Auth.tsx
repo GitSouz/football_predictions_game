@@ -1,22 +1,41 @@
 import { useState } from 'react';
 import { useAuth } from '../lib/auth';
 
+type Mode = 'signin' | 'signup';
+
+// Turn Supabase's raw auth errors into friendly messages.
+function friendly(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes('invalid login credentials'))
+    return 'Wrong username or password.';
+  if (m.includes('user already registered'))
+    return 'That username is taken — try signing in instead.';
+  if (m.includes('password should be'))
+    return 'Password must be at least 6 characters.';
+  return message;
+}
+
 export function Auth() {
-  const { signIn } = useAuth();
-  const [email, setEmail] = useState('');
-  const [sent, setSent] = useState(false);
+  const { signIn, signUp } = useAuth();
+  const [mode, setMode] = useState<Mode>('signin');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const validUsername = /^[a-zA-Z0-9._-]{2,20}$/.test(username.trim());
+  const validPassword = password.length >= 6;
+  const canSubmit = validUsername && validPassword && !busy;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setBusy(true);
     try {
-      await signIn(email);
-      setSent(true);
+      if (mode === 'signup') await signUp(username, password);
+      else await signIn(username, password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(friendly(err instanceof Error ? err.message : String(err)));
     } finally {
       setBusy(false);
     }
@@ -32,33 +51,83 @@ export function Auth() {
           Winners settled automatically from live data.
         </p>
 
-        {sent ? (
-          <div className="notice-inline">
-            <p>
-              ✉️ Check <strong>{email}</strong> for a sign-in link. Open it on
-              this device to log in — no password needed.
+        <div className="tabs auth-tabs">
+          <button
+            type="button"
+            className={mode === 'signin' ? 'tab active' : 'tab'}
+            onClick={() => {
+              setMode('signin');
+              setError(null);
+            }}
+          >
+            Sign in
+          </button>
+          <button
+            type="button"
+            className={mode === 'signup' ? 'tab active' : 'tab'}
+            onClick={() => {
+              setMode('signup');
+              setError(null);
+            }}
+          >
+            Create account
+          </button>
+        </div>
+
+        <form onSubmit={submit} className="auth-form">
+          <label htmlFor="username">Username</label>
+          <input
+            id="username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder="e.g. andy_d"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            placeholder="At least 6 characters"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+
+          <button className="btn" disabled={!canSubmit}>
+            {busy
+              ? 'Please wait…'
+              : mode === 'signup'
+                ? 'Create account'
+                : 'Sign in'}
+          </button>
+
+          {mode === 'signup' && username && !validUsername && (
+            <p className="muted small">
+              Username: 2–20 characters, letters/numbers and . _ - only.
             </p>
-            <button className="btn-ghost" onClick={() => setSent(false)}>
-              Use a different email
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={submit} className="auth-form">
-            <label htmlFor="email">Sign in with your email</label>
-            <input
-              id="email"
-              type="email"
-              required
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <button className="btn" disabled={busy || !email.trim()}>
-              {busy ? 'Sending…' : 'Send me a login link'}
-            </button>
-            {error && <p className="error">{error}</p>}
-          </form>
-        )}
+          )}
+          {error && <p className="error">{error}</p>}
+        </form>
+
+        <p className="muted small auth-foot">
+          {mode === 'signin' ? (
+            <>
+              New here?{' '}
+              <button className="linklike" onClick={() => setMode('signup')}>
+                Create an account
+              </button>
+            </>
+          ) : (
+            <>
+              Already have one?{' '}
+              <button className="linklike" onClick={() => setMode('signin')}>
+                Sign in
+              </button>
+            </>
+          )}
+        </p>
       </div>
     </div>
   );
