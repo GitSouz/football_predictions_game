@@ -19,6 +19,7 @@ interface AuthState {
   signUp: (username: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   setDisplayName: (name: string) => Promise<void>;
+  changePassword: (newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -136,6 +137,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!user) return;
       await upsertProfile(user.id, name);
       setProfile(await getProfile(user.id));
+    },
+
+    async changePassword(newPassword: string) {
+      if (!supabase) throw new Error('Supabase is not configured.');
+      // A valid session is required; Supabase updates the current user's
+      // password directly (no email round-trip).
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (error) throw new Error(error.message);
     },
   };
 

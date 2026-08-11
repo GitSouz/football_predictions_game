@@ -107,8 +107,12 @@ once to pull the season's fixtures in immediately.
   **"Confirm email" OFF** in Supabase **Authentication → Sign In / Providers →
   Email** (step 1.3). With it on, Supabase tries to send a confirmation email
   and fails.
-- **A friend forgot their password** → as the host, reset it in Supabase
-  **Authentication → Users**: find their username row and set a new password.
+- **Changing a password** → a signed-in player can set a new one any time via
+  the **🔑** button in the top bar (no email involved).
+- **A friend is fully locked out (forgot their password)** → since there's no
+  email, reset it for them as host in Supabase **Authentication → Users**: find
+  their username row → **⋯ → Reset password** (or set a new one), then tell them
+  the temporary password so they can sign in and change it via 🔑.
 - **No fixtures / scores** → click **↻ Refresh scores**. If it still fails, the
   FPL API may be mid-update (it goes offline briefly between seasons and during
   daily maintenance) — try again shortly. Also confirm `SUPABASE_SERVICE_ROLE_KEY`

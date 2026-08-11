@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useAuth } from '../lib/auth';
 import { navigate } from '../App';
+import { ChangePassword } from './ChangePassword';
 
 export function Header() {
   const { user, profile, signOut, setDisplayName } = useAuth();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');
+  const [showPw, setShowPw] = useState(false);
 
   async function save() {
     const trimmed = name.trim();
@@ -51,11 +53,21 @@ export function Header() {
               {profile?.display_name ?? 'Player'}
             </button>
           )}
+          <button
+            className="btn-ghost icon-btn"
+            title="Change password"
+            aria-label="Change password"
+            onClick={() => setShowPw(true)}
+          >
+            🔑
+          </button>
           <button className="btn-ghost" onClick={signOut}>
             Sign out
           </button>
         </div>
       )}
+
+      {showPw && <ChangePassword onClose={() => setShowPw(false)} />}
     </header>
   );
 }

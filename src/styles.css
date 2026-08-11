@@ -599,6 +599,36 @@ td.me,
   border-bottom: 0;
 }
 
+/* ---- Icon button + modal ---- */
+.icon-btn {
+  padding: 7px 10px;
+  line-height: 1;
+}
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 0, 30, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 50;
+}
+.modal {
+  width: 100%;
+  max-width: 380px;
+  margin: 0;
+}
+.modal h3 {
+  margin-top: 0;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
 /* ---- Footer ---- */
 .footer {
   text-align: center;
