@@ -51,7 +51,14 @@ export default async function handler(req, res) {
     }
   }
 
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  // Normalise to the bare project origin. A trailing slash or an accidental
+  // "/rest/v1" suffix makes the Supabase client build a malformed path that the
+  // gateway rejects with "Invalid path specified in request URL".
+  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '')
+    .trim()
+    .replace(/\/+$/, '')
+    .replace(/\/rest\/v1$/, '')
+    .replace(/\/+$/, '');
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
     return res.status(500).json({
