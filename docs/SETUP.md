@@ -77,14 +77,19 @@ in Supabase.
 
 ### 2.4 Load the fixtures
 Open your site, sign in, create a league, and open it. Hit **↻ Refresh scores**
-once to pull the season's fixtures in immediately. After that, the **Vercel
-Cron** (configured in `vercel.json`, every ~10 minutes) keeps results up to date
-on its own — including live during matches.
+once to pull the season's fixtures in immediately.
 
-> **Cron frequency:** the schedule is `*/10 * * * *`. On Vercel's free (Hobby)
-> plan cron timing can be approximate and less frequent; that's fine here — the
-> **↻ Refresh scores** button pulls the latest on demand any time, and the
-> Pro plan runs it exactly on schedule.
+> **How live scoring stays current (important on the free plan):** Vercel's
+> **Hobby plan only allows a cron job to run once per day** — a more frequent
+> schedule fails the deployment. So `vercel.json` sets the cron to daily
+> (`0 6 * * *`) as a safety-net refresh. The *live* updating during matches is
+> done by the **app itself**: while you have a locked gameweek open, it quietly
+> re-syncs results from the FPL API every 60 seconds, so the table moves in near
+> real time. You can also press **↻ Refresh scores** any time.
+>
+> Want hands-off, always-on scoring even when nobody has the site open? Upgrade
+> the project to **Vercel Pro** and change the cron in `vercel.json` to e.g.
+> `*/5 * * * *` (every 5 minutes). Not required for a normal group game.
 
 ---
 

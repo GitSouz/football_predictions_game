@@ -94,6 +94,33 @@ export function LeagueView({ code }: { code: string }) {
     return new Date(currentGw.deadline_time).getTime() <= Date.now();
   }, [currentGw]);
 
+  // Once a gameweek is locked, matches are (or will be) in play. Until every
+  // fixture is finished, quietly re-sync results in the background so the table
+  // moves live — this is what keeps scores current on Vercel's free plan, where
+  // the cron only runs once a day.
+  const allFinished = useMemo(
+    () => fixtures.length > 0 && fixtures.every((f) => f.finished),
+    [fixtures]
+  );
+
+  useEffect(() => {
+    if (gw == null || !locked || allFinished) return;
+    let cancelled = false;
+    const tick = async () => {
+      await refreshScores();
+      if (cancelled || gw == null) return;
+      const [gws, fx] = await Promise.all([getGameweeks(), getFixtures(gw)]);
+      if (cancelled) return;
+      setGameweeks(gws);
+      setFixtures(fx);
+    };
+    const id = setInterval(tick, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [gw, locked, allFinished]);
+
   async function onRefresh() {
     setRefreshing(true);
     const res = await refreshScores();

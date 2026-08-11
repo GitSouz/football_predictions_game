@@ -26,9 +26,12 @@ no spreadsheets, no manual scoring.
   Realtime. All the game logic and the fairness rules (predictions stay hidden
   until lock; no editing after the deadline) are enforced in the database, not
   just the UI.
-- **Vercel** — hosts the app and runs a **Cron job** every ~10 minutes that
-  fetches live results from the **official FPL API** and writes them to Supabase.
-  No paid football API and no API key required.
+- **Vercel** — hosts the app and runs a daily **Cron job** that fetches results
+  from the **official FPL API** and writes them to Supabase (no paid football API
+  or key required). During matches, the app itself re-syncs every 60 seconds
+  while a locked gameweek is open, so scores move live even on Vercel's free
+  plan (whose cron is limited to once per day). On Vercel Pro you can bump the
+  cron to every few minutes for always-on scoring.
 
 ```
 Browser ──► Supabase (leagues, predictions, results, auth)
