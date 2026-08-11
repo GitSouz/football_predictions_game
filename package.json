@@ -1,0 +1,24 @@
+{
+  "name": "football-predictions-game",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A Premier League score-prediction game for a group of friends, scored automatically from live FPL data. 3 points for the exact score, 1 for the correct result.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.8",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}

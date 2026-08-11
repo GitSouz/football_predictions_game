@@ -1,0 +1,12 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+.vite
+.vercel
+
+# Local env files (keep .env.example tracked)
+.env
+.env.*
+!.env.example
