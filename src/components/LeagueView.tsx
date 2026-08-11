@@ -124,11 +124,15 @@ export function LeagueView({ code }: { code: string }) {
   async function onRefresh() {
     setRefreshing(true);
     const res = await refreshScores();
-    if (gw != null) {
-      // Reload gameweeks (deadline/current flags) and fixtures after a sync.
-      const [gws, fx] = await Promise.all([getGameweeks(), getFixtures(gw)]);
-      setGameweeks(gws);
-      setFixtures(fx);
+    // Always reload gameweeks after a sync. On a cold start the league opened
+    // with an empty database, so there was no selected gameweek yet — pick a
+    // sensible default now that the data exists, then load its fixtures.
+    const gws = await getGameweeks();
+    setGameweeks(gws);
+    const targetGw = gw ?? defaultGameweek(gws);
+    if (targetGw != null) {
+      if (targetGw !== gw) setGw(targetGw);
+      setFixtures(await getFixtures(targetGw));
     }
     setRefreshing(false);
     if (res == null) {
