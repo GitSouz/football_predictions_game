@@ -167,11 +167,12 @@ export async function savePrediction(
 // --- Standings -------------------------------------------------------------
 
 export async function getStandings(leagueId: string): Promise<Standing[]> {
-  const { data, error } = await db()
-    .from('league_standings')
-    .select('*')
-    .eq('league_id', leagueId)
-    .order('total_points', { ascending: false });
+  // league_table() lists every member (even on 0 points) and totals only
+  // finished games, so the table is complete from day one without leaking
+  // anyone's still-hidden predictions.
+  const { data, error } = await db().rpc('league_table', {
+    _league_id: leagueId,
+  });
   if (error) throw new Error(error.message);
   return (data as Standing[]) ?? [];
 }

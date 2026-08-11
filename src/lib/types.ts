@@ -60,9 +60,8 @@ export interface Prediction {
   updated_at: string;
 }
 
-// Row from the `league_standings` view.
+// Row from the `league_table(_league_id)` function.
 export interface Standing {
-  league_id: string;
   user_id: string;
   display_name: string;
   played: number;
