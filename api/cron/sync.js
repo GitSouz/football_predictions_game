@@ -106,7 +106,14 @@ export default async function handler(req, res) {
           home_score: f.team_h_score,
           away_score: f.team_a_score,
           started: !!f.started,
-          finished: !!f.finished,
+          // FPL exposes two "done" flags: `finished_provisional` flips at the
+          // final whistle, while `finished` waits for `data_checked` (bonus
+          // points confirmed), which can lag hours — sometimes into the next
+          // day. Our scoring only needs the final scoreline, which is locked at
+          // full time, so we treat a provisionally-finished match as finished.
+          // This lets the league table fill in right after full time instead of
+          // waiting on FPL's data check.
+          finished: !!f.finished || !!f.finished_provisional,
           updated_at: new Date().toISOString(),
         };
       });
