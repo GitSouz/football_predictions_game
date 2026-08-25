@@ -200,12 +200,21 @@ export function LeagueView({ code }: { code: string }) {
               value={gw ?? ''}
               onChange={(e) => setGw(Number(e.target.value))}
             >
-              {gameweeks.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                  {g.is_current ? ' • live' : g.finished ? ' • done' : ''}
-                </option>
-              ))}
+              {gameweeks.map((g) => {
+                // FPL keeps a gameweek `is_current` (and its own `finished`
+                // flag off) until it rolls the current pointer to the next one,
+                // a day or two later — so a gameweek whose matches are all over
+                // still reads "live" in the gap. For the selected gameweek we
+                // know its fixtures, so treat "every fixture finished" as done,
+                // which wins over the stale "live".
+                const done = g.finished || (g.id === gw && allFinished);
+                return (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                    {done ? ' • done' : g.is_current ? ' • live' : ''}
+                  </option>
+                );
+              })}
             </select>
             <button className="btn-sm" onClick={onRefresh} disabled={refreshing}>
               {refreshing ? 'Refreshing…' : '↻ Refresh scores'}
