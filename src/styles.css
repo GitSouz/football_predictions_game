@@ -598,6 +598,32 @@ td.me,
 .standings tbody tr:last-child td {
   border-bottom: 0;
 }
+.standings .move-col {
+  text-align: center;
+  width: 1%;
+  white-space: nowrap;
+}
+.standings thead .move-col {
+  font-size: 0.72rem;
+}
+.move {
+  display: inline-block;
+  min-width: 2.1em;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+.move.up {
+  color: #14803a;
+}
+.move.down {
+  color: var(--pl-pink);
+}
+.move.same,
+.move.none {
+  color: var(--ink-2);
+  font-weight: 500;
+}
 
 /* ---- Icon button + modal ---- */
 .icon-btn {

@@ -6,6 +6,7 @@ import type {
   Prediction,
   Profile,
   Standing,
+  StandingMovement,
 } from './types';
 
 // --- Profile ---------------------------------------------------------------
@@ -175,6 +176,21 @@ export async function getStandings(leagueId: string): Promise<Standing[]> {
   });
   if (error) throw new Error(error.message);
   return (data as Standing[]) ?? [];
+}
+
+/**
+ * Standings plus each member's totals as they stood before the latest played
+ * gameweek, so the table can show a position-change arrow. Ordered by current
+ * total (same ordering as league_table).
+ */
+export async function getStandingsMovement(
+  leagueId: string
+): Promise<StandingMovement[]> {
+  const { data, error } = await db().rpc('league_table_movement', {
+    _league_id: leagueId,
+  });
+  if (error) throw new Error(error.message);
+  return (data as StandingMovement[]) ?? [];
 }
 
 // --- Live data refresh -----------------------------------------------------
