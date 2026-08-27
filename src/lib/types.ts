@@ -69,3 +69,12 @@ export interface Standing {
   correct_results: number;
   total_points: number;
 }
+
+// Row from `league_table_movement(_league_id)` — a Standing plus the same
+// totals as they stood before the latest played gameweek, so the client can
+// rank both and show a position-change arrow.
+export interface StandingMovement extends Standing {
+  prev_played: number;
+  prev_exact: number;
+  prev_points: number;
+}
