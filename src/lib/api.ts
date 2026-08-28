@@ -104,6 +104,17 @@ export async function getGameweeks(): Promise<Gameweek[]> {
   return (data as Gameweek[]) ?? [];
 }
 
+/**
+ * The gameweek the app should open on — derived server-side from fixture
+ * kickoff times and finished flags (the one in play, or the next to predict),
+ * rather than FPL's laggy `is_current`. Returns null if no gameweeks exist yet.
+ */
+export async function getDisplayGameweek(): Promise<number | null> {
+  const { data, error } = await db().rpc('current_display_gameweek');
+  if (error) throw new Error(error.message);
+  return (data as number | null) ?? null;
+}
+
 export async function getFixtures(gameweek: number): Promise<Fixture[]> {
   const { data, error } = await db()
     .from('fixtures')

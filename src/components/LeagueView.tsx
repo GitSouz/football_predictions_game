@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  getDisplayGameweek,
   getFixtures,
   getGameweeks,
   getLeagueByCode,
@@ -43,9 +44,12 @@ export function LeagueView({ code }: { code: string }) {
       setLoading(true);
       setError(null);
       try {
-        const [lg, gws] = await Promise.all([
+        const [lg, gws, displayGw] = await Promise.all([
           getLeagueByCode(code),
           getGameweeks(),
+          // Derived "which week to show". Tolerate failure (e.g. before the
+          // migration is applied) and fall back to the local heuristic.
+          getDisplayGameweek().catch(() => null),
         ]);
         if (cancelled) return;
         if (!lg) {
@@ -55,7 +59,7 @@ export function LeagueView({ code }: { code: string }) {
         }
         setLeague(lg);
         setGameweeks(gws);
-        setGw((prev) => prev ?? defaultGameweek(gws));
+        setGw((prev) => prev ?? displayGw ?? defaultGameweek(gws));
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : String(err));
       } finally {
