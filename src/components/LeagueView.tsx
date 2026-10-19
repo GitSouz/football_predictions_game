@@ -93,22 +93,52 @@ export function LeagueView({ code }: { code: string }) {
     [gameweeks, gw]
   );
 
-  const locked = useMemo(() => {
-    if (!currentGw) return false;
-    return new Date(currentGw.deadline_time).getTime() <= Date.now();
-  }, [currentGw]);
+  // Partition the week's fixtures by their OWN kick-off: a game is locked once
+  // it has started (or its kickoff_time has passed). Re-evaluated on a short
+  // tick so a game flips from "predict" to "revealed" the moment it kicks off,
+  // with no reload. A game with no kickoff_time (TBC) stays predictable.
+  const [clockNow, setClockNow] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setClockNow(Date.now()), 15_000);
+    return () => clearInterval(t);
+  }, []);
 
-  // Once a gameweek is locked, matches are (or will be) in play. Until every
-  // fixture is finished, quietly re-sync results in the background so the table
-  // moves live — this is what keeps scores current on Vercel's free plan, where
-  // the cron only runs once a day.
+  const { openFixtures, lockedFixtures } = useMemo(() => {
+    const open: Fixture[] = [];
+    const lockedFx: Fixture[] = [];
+    for (const f of fixtures) {
+      const kickedOff =
+        f.started ||
+        (f.kickoff_time != null &&
+          new Date(f.kickoff_time).getTime() <= clockNow);
+      (kickedOff ? lockedFx : open).push(f);
+    }
+    return { openFixtures: open, lockedFixtures: lockedFx };
+  }, [fixtures, clockNow]);
+
+  // Soonest kick-off among the games still open to predict — the countdown in
+  // the predict view ticks down to this.
+  const nextKickoff = useMemo(() => {
+    const times = openFixtures
+      .map((f) => f.kickoff_time)
+      .filter((k): k is string => k != null)
+      .sort();
+    return times[0] ?? null;
+  }, [openFixtures]);
+
+  const someLocked = lockedFixtures.length > 0;
+
+  // Once any game has kicked off, matches are in play. Until every fixture is
+  // finished, quietly re-sync results in the background so the table moves live
+  // — this is what keeps scores current on Vercel's free plan, where the cron
+  // only runs once a day.
   const allFinished = useMemo(
     () => fixtures.length > 0 && fixtures.every((f) => f.finished),
     [fixtures]
   );
 
   useEffect(() => {
-    if (gw == null || !locked || allFinished) return;
+    if (gw == null || !someLocked || allFinished) return;
     let cancelled = false;
     const tick = async () => {
       await refreshScores();
@@ -123,7 +153,7 @@ export function LeagueView({ code }: { code: string }) {
       cancelled = true;
       clearInterval(id);
     };
-  }, [gw, locked, allFinished]);
+  }, [gw, someLocked, allFinished]);
 
   async function onRefresh() {
     setRefreshing(true);
@@ -242,20 +272,26 @@ export function LeagueView({ code }: { code: string }) {
             {refreshing ? 'Refreshing…' : 'Load fixtures now'}
           </button>
         </div>
-      ) : locked ? (
-        <GameweekGrid
-          leagueId={league.id}
-          gameweek={gw as number}
-          fixtures={fixtures}
-          deadline={currentGw?.deadline_time ?? null}
-        />
       ) : (
-        <PredictionForm
-          leagueId={league.id}
-          gameweek={gw as number}
-          fixtures={fixtures}
-          deadline={currentGw?.deadline_time ?? null}
-        />
+        <>
+          {openFixtures.length > 0 && (
+            <PredictionForm
+              leagueId={league.id}
+              gameweek={gw as number}
+              fixtures={openFixtures}
+              deadline={nextKickoff}
+            />
+          )}
+          {lockedFixtures.length > 0 && (
+            <GameweekGrid
+              leagueId={league.id}
+              gameweek={gw as number}
+              fixtures={lockedFixtures}
+              deadline={currentGw?.deadline_time ?? null}
+              reloadKey={lockedFixtures.length}
+            />
+          )}
+        </>
       )}
     </div>
   );

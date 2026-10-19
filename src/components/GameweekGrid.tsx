@@ -11,17 +11,21 @@ function resultLabel(f: Fixture): string {
   return f.started ? 'live' : '–';
 }
 
-// Post-deadline view: everyone's predictions for the gameweek, side by side,
-// with points. Live matches count provisionally so the table moves in real time.
+// Reveal view: everyone's predictions for the games that have kicked off, side
+// by side, with points. Live matches count provisionally so the table moves in
+// real time. `reloadKey` changes whenever the set of kicked-off fixtures grows,
+// so a game that has just started refetches and shows its now-revealed picks.
 export function GameweekGrid({
   leagueId,
   gameweek,
   fixtures,
+  reloadKey = 0,
 }: {
   leagueId: string;
   gameweek: number;
   fixtures: Fixture[];
   deadline: string | null;
+  reloadKey?: number;
 }) {
   const { user } = useAuth();
   const [members, setMembers] = useState<{ user_id: string; display_name: string }[]>(
@@ -48,7 +52,7 @@ export function GameweekGrid({
     return () => {
       cancelled = true;
     };
-  }, [leagueId, gameweek]);
+  }, [leagueId, gameweek, reloadKey]);
 
   // Index: `${userId}:${fixtureId}` -> prediction.
   const byKey = useMemo(() => {
@@ -78,7 +82,7 @@ export function GameweekGrid({
   return (
     <div className="grid-wrap card">
       <p className="muted small locked-note">
-        🔒 This gameweek is locked — everyone's predictions are shown. Points:{' '}
+        🔒 Kicked off — everyone's predictions for these games are shown. Points:{' '}
         <strong>3</strong> exact score, <strong>1</strong> correct result.
       </p>
       <div className="grid-scroll">

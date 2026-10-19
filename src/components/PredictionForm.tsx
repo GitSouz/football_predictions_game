@@ -93,7 +93,11 @@ export function PredictionForm({
   return (
     <div className="predict">
       <div className="predict-bar">
-        <Deadline deadline={deadline} />
+        <Deadline
+          deadline={deadline}
+          label="Next game locks in"
+          tbc="Predict each game up to kick-off"
+        />
         <div className="predict-bar-right">
           <span className="muted small">
             {filledCount}/{fixtures.length} predicted

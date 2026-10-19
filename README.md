@@ -13,19 +13,20 @@ no spreadsheets, no manual scoring.
 1. One person **creates a league** and shares the 6-character code.
 2. Everyone **picks a username + password** (no email needed) and **joins**
    with the code.
-3. Each gameweek, everyone **predicts every fixture**. You can edit right up to
-   the **gameweek deadline** (the first kickoff), then predictions **lock**.
+3. Each gameweek, everyone **predicts every fixture**. Each game can be edited
+   right up to **its own kick-off**, then that game **locks** — so games later
+   in the week stay open while earlier ones are already underway.
 4. As matches are played, results are pulled in automatically and the
-   **table updates itself**. Once a gameweek locks, everyone can see everyone
-   else's predictions and how they're scoring.
+   **table updates itself**. A game's predictions are revealed to everyone the
+   moment it kicks off, and you can see how everyone is scoring.
 
 ## The stack (same shape as `fpl_draft`)
 
 - **Vite + React + TypeScript** single-page app
 - **Supabase** — Postgres + Auth (username + password, no email) + Row-Level Security +
-  Realtime. All the game logic and the fairness rules (predictions stay hidden
-  until lock; no editing after the deadline) are enforced in the database, not
-  just the UI.
+  Realtime. All the game logic and the fairness rules (each game's predictions
+  stay hidden until it kicks off; no editing a game once it starts) are enforced
+  in the database, not just the UI.
 - **Vercel** — hosts the app and runs a daily **Cron job** that fetches results
   from the **official FPL API** and writes them to Supabase (no paid football API
   or key required). During matches, the app itself re-syncs every 60 seconds
@@ -44,11 +45,13 @@ Browser ──► Supabase (leagues, predictions, results, auth)
 
 - **Scoring** lives in one SQL view (`prediction_scores`) and is mirrored in
   `src/lib/scoring.ts` for the live UI. One rule, one place.
-- **Predictions are private until lock.** Row-Level Security only reveals other
-  players' predictions for a gameweek *after* its deadline.
-- **No late edits.** The `upsert_prediction` function re-checks the deadline
-  server-side, so a prediction can't be saved or changed once the gameweek is
-  locked — even via the API directly.
+- **Predictions are private until kick-off.** Row-Level Security only reveals
+  another player's prediction for a fixture *after that fixture* has kicked off
+  (`fixture_locked()`), so a game later in the week stays hidden while you're
+  still predicting it.
+- **No late edits.** The `upsert_prediction` function re-checks the fixture's
+  kick-off server-side, so a prediction can't be saved or changed once that
+  game has started — even via the API directly.
 - **Results can't be forged.** Only the server-side cron (service-role key) can
   write to the `fixtures` / `gameweeks` tables. Clients can read them but never
   write them.

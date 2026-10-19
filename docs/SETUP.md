@@ -21,6 +21,14 @@ this repo, paste the **whole file** in, and click **Run**. You should see
 "Success". This creates every table, the security rules, the scoring view, and
 the game functions.
 
+Then run the **later migration files in the same way, in numerical order**
+(`0002_…`, `0003_…`, `0004_…`, `0005_…`). Each is self-contained and idempotent —
+running it just adds or updates a function/policy. In particular,
+[`0005_per_fixture_lock.sql`](../supabase/migrations/0005_per_fixture_lock.sql)
+switches the game from locking a whole gameweek at its deadline to locking each
+match at its own kick-off; skip it and the app still works but keeps the old
+lock-the-whole-week behaviour.
+
 ### 1.3 Turn on username login (no email sending)
 Players sign in with a **username + password** — no emails are ever sent, so you
 don't need to configure any mail provider. Set this up:
@@ -77,9 +85,9 @@ once to pull the season's fixtures in immediately.
 > **Hobby plan only allows a cron job to run once per day** — a more frequent
 > schedule fails the deployment. So `vercel.json` sets the cron to daily
 > (`0 6 * * *`) as a safety-net refresh. The *live* updating during matches is
-> done by the **app itself**: while you have a locked gameweek open, it quietly
-> re-syncs results from the FPL API every 60 seconds, so the table moves in near
-> real time. You can also press **↻ Refresh scores** any time.
+> done by the **app itself**: once any game in the open week has kicked off, it
+> quietly re-syncs results from the FPL API every 60 seconds, so the table moves
+> in near real time. You can also press **↻ Refresh scores** any time.
 >
 > Want hands-off, always-on scoring even when nobody has the site open? Upgrade
 > the project to **Vercel Pro** and change the cron in `vercel.json` to e.g.
@@ -89,11 +97,13 @@ once to pull the season's fixtures in immediately.
 
 ## Running a season
 
-- **Predictions lock at each gameweek's deadline** (the FPL deadline, ~90 min
-  before the first kickoff). Until then, everyone edits privately — nobody can
-  see anyone else's picks.
-- **After lock**, the gameweek view shows everyone's predictions side by side,
-  with points filling in live as matches finish.
+- **Each game locks at its own kick-off.** You can predict (and re-edit) any
+  fixture right up to the moment it starts — so games later in the week stay
+  open while earlier ones are already being played. Your picks stay private per
+  game: nobody sees your prediction for a match until it kicks off.
+- **A week can be mixed**: the gameweek view shows the "predict these" games
+  that haven't started above the already-kicked-off games, where everyone's
+  predictions are revealed side by side with points filling in live.
 - **The Table** tab is the running season leaderboard, updated automatically.
 
 ---
@@ -120,4 +130,5 @@ once to pull the season's fixtures in immediately.
 - **Scores not moving during matches** → the free cron may be running
   infrequently; hit **↻ Refresh scores**, or upgrade the schedule/plan.
 - **Someone can't see others' predictions before a match** → that's intended.
-  They only appear once the gameweek deadline has passed.
+  A game's predictions are revealed only once that game kicks off — not when the
+  rest of the week's games start.
